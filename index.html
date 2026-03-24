@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <title>FlashNote</title>
+  <meta name="theme-color" content="#0d1510" id="meta-theme"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FlashNote"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root { --kb: 0px; }
+
+[data-theme="light"] {
+  --accent:  #5bb88a;
+  --accent2: #2d7d52;
+  --bg:      #f0f7f4;
+  --bg2:     #ffffff;
+  --bg3:     #e4f2ec;
+  --bg4:     #d3e9de;
+  --border:  #c8e0d8;
+  --border2: #aecfc3;
+  --text:    #1a3328;
+  --text2:   #3f7060;
+  --text3:   #7a9e8e;
+  --del:     #d93c3c;
+  --arc:     #5bb88a;
+  --nav:     #eef6f2;
+  --shadow:  0 4px 20px rgba(26,51,40,.1);
+  --hl:      rgba(91,184,138,.2);
+}
+[data-theme="dark"] {
+  --accent:  #5bb88a;
+  --accent2: #3da66e;
+  --bg:      #0d1510;
+  --bg2:     #131d17;
+  --bg3:     #1a2820;
+  --bg4:     #203228;
+  --border:  #1c2e24;
+  --border2: #2a4437;
+  --text:    #c6e3d3;
+  --text2:   #669e80;
+  --text3:   #3a6050;
+  --del:     #ff5252;
+  --arc:     #5bb88a;
+  --nav:     #111a14;
+  --shadow:  0 4px 24px rgba(0,0,0,.5);
+  --hl:      rgba(91,184,138,.17);
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:14px;
+  -webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+button{font-family:inherit;cursor:pointer;background:none;border:none}
+
+/* ═══════════════════════════════════════
+   APP SHELL  — keyboard-stable flex column
+   height shrinks via --kb when keyboard opens (iOS fix)
+═══════════════════════════════════════ */
+#app{
+  display:flex;flex-direction:column;
+  height:calc(100% - var(--kb,0px));
+  max-width:480px;margin:0 auto;
+  /* NO transition on height → prevents "荒ぶる" */
+}
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+#header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 10px;
+  padding-top:max(12px,env(safe-area-inset-top));
+  border-bottom:1px solid var(--border);
+  background:var(--bg);z-index:10;
+}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;
+  letter-spacing:-.5px;color:var(--accent)}
+.logo em{color:var(--text3);font-style:normal}
+.hdr-btns{display:flex;gap:6px}
+.ico-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border2);background:var(--bg2);
+  color:var(--text3);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:15px;
+}
+.ico-btn:active{transform:scale(.9)}
+.ico-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(91,184,138,.08)}
+.ico-btn.install{border-color:rgba(91,184,138,.4);color:var(--accent);background:rgba(91,184,138,.06)}
+
+/* ═══════════════════════════════════════
+   SEARCH DRAWER
+═══════════════════════════════════════ */
+#search-drawer{
+  flex-shrink:0;overflow:hidden;max-height:0;
+  transition:max-height .25s ease;
+  background:var(--bg);border-bottom:1px solid transparent;
+}
+#search-drawer.open{max-height:64px;border-bottom-color:var(--border)}
+.search-row{display:flex;align-items:center;gap:8px;padding:10px 16px}
+.search-row svg{color:var(--text3);flex-shrink:0}
+#search-input{
+  flex:1;background:transparent;border:none;
+  color:var(--text);font-family:'DM Mono',monospace;
+  font-size:15px;outline:none;
+}
+#search-input::placeholder{color:var(--text3)}
+.s-clear{color:var(--text3);font-size:20px;padding:0 2px;display:none}
+#search-input:not(:placeholder-shown) ~ .s-clear{display:block}
+.s-clear:active{color:var(--del)}
+mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
+
+/* ═══════════════════════════════════════
+   PAGES CONTAINER
+═══════════════════════════════════════ */
+#pages{flex:1;min-height:0;position:relative;overflow:hidden}
+.page{
+  position:absolute;inset:0;
+  display:none;flex-direction:column;
+}
+.page.active{display:flex}
+/* scrollable pages */
+#page-archive,#page-calendar,#page-mypage{overflow-y:auto;overflow-x:hidden}
+#page-archive::-webkit-scrollbar,
+#page-calendar::-webkit-scrollbar,
+#page-mypage::-webkit-scrollbar{width:0}
+/* home page: internal feed scrolls */
+#page-home{overflow:hidden}
+
+/* ═══════════════════════════════════════
+   HOME — FEED
+═══════════════════════════════════════ */
+#feed{
+  flex:1;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  padding:10px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  -webkit-overflow-scrolling:touch;
+}
+#feed::-webkit-scrollbar{width:0}
+
+/* ═══════════════════════════════════════
+   COMPOSER  — bottom of home page (in-flow, not fixed)
+═══════════════════════════════════════ */
+#composer{
+  flex-shrink:0;
+  background:var(--bg);
+  border-top:1px solid var(--border);
+  padding:10px 14px 6px;
+  padding-bottom:max(6px,env(safe-area-inset-bottom));
+}
+#note-input{
+  width:100%;
+  background:var(--bg2);
+  border:1.5px solid var(--border2);
+  border-radius:20px;
+  color:var(--text);
+  font-family:'DM Mono',monospace;font-size:15px;line-height:1.5;
+  padding:10px 16px;
+  outline:none;resize:none;
+  overflow:hidden; /* ← no scrollbar */
+  min-height:44px;max-height:160px;
+  display:block;width:100%;
+  transition:border-color .15s;
+}
+#note-input:focus{border-color:var(--accent)}
+#note-input::placeholder{color:var(--text3)}
+#comp-meta{
+  display:flex;justify-content:flex-end;
+  padding:4px 4px 0;min-height:18px;
+}
+.char-hint{font-size:10px;color:var(--text3)}
+.char-hint.warn{color:#e69a30}
+.char-hint.over{color:var(--del)}
+
+/* ═══════════════════════════════════════
+   SWIPE CARDS (home + archive)
+═══════════════════════════════════════ */
+.note-wrap{
+  position:relative;border-radius:14px;overflow:hidden;flex-shrink:0;
+}
+.swipe-bg{
+  position:absolute;inset:0;
+  display:flex;align-items:center;
+  border-radius:14px;opacity:0;pointer-events:none;
+}
+.swipe-bg.left-bg{
+  background:var(--del);justify-content:flex-end;padding-right:20px;color:#fff;
+}
+.swipe-bg.right-bg-home{
+  background:var(--arc);justify-content:flex-start;padding-left:20px;color:#fff;
+}
+.swipe-bg.right-bg-arc{
+  background:var(--accent2);justify-content:flex-start;padding-left:20px;color:#fff;
+}
+.sb-lbl{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:11px;
+}
+.sb-lbl svg{width:18px;height:18px}
+.note-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:14px;padding:13px 15px;
+  position:relative;z-index:2;
+  will-change:transform;
+  animation:popUp .2s cubic-bezier(.34,1.56,.64,1);
+  user-select:none;
+}
+/* archived notes: subtle accent */
+.note-card.arc{border-left:3px solid rgba(91,184,138,.3)}
+
+@keyframes popUp{
+  from{opacity:0;transform:scale(.95) translateY(6px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.note-ts{display:flex;align-items:baseline;gap:6px;margin-bottom:7px}
+.note-date{font-size:11px;color:var(--text3)}
+.note-time{font-size:13px;color:var(--text2);font-weight:500}
+.note-body{font-size:15px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.empty-state{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;padding:40px 20px;color:var(--text3);text-align:center;
+}
+.empty-state .ei{font-size:40px;line-height:1}
+.empty-state p{font-size:13px;line-height:1.8;max-width:220px}
+
+/* ═══════════════════════════════════════
+   ARCHIVE TAB
+═══════════════════════════════════════ */
+#arc-feed{
+  padding:10px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  flex:1;
+}
+
+/* ═══════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════ */
+.cal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px 10px;flex-shrink:0;
+}
+.cal-month{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
+.cal-nav{display:flex;gap:4px}
+.cal-nav-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border2);background:var(--bg2);
+  color:var(--text2);font-size:18px;
+  display:flex;align-items:center;justify-content:center;transition:all .12s;
+}
+.cal-nav-btn:active{background:var(--bg3)}
+.cal-grid{padding:0 14px}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.cal-dow span{
+  text-align:center;font-size:11px;color:var(--text3);
+  font-family:'Syne',sans-serif;font-weight:700;padding:4px 0;
+}
+.cal-dow .dsun{color:#e05c5c}
+.cal-dow .dsat{color:#5c8be0}
+.cal-cells{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-cell{
+  aspect-ratio:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  border-radius:10px;font-size:13px;font-weight:500;
+  color:var(--text2);cursor:pointer;
+  transition:background .12s;gap:2px;
+  touch-action:manipulation;
+}
+.cal-cell.csun{color:#e05c5c}
+.cal-cell.csat{color:#5c8be0}
+.cal-cell:active{background:var(--bg3)}
+.cal-cell.today{background:rgba(91,184,138,.12);color:var(--accent);font-weight:700}
+.cal-cell.sel{background:var(--accent);color:#fff;font-weight:700}
+.cal-cell.sel.csun,.cal-cell.sel.csat{color:#fff}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cal-cell.sel .cal-dot{background:rgba(255,255,255,.7)}
+.cal-divider{height:1px;background:var(--border);margin:12px 14px 0}
+#cal-day-label{
+  padding:12px 18px 6px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--text2);
+}
+#cal-day-notes{padding:0 14px 20px;display:flex;flex-direction:column;gap:8px}
+.cal-note-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:11px 14px;animation:popUp .18s ease-out;
+}
+.cal-note-ts{font-size:11px;color:var(--text3);margin-bottom:5px}
+.cal-note-txt{font-size:14px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+/* ═══════════════════════════════════════
+   MY PAGE
+═══════════════════════════════════════ */
+.mp-sec{padding:16px 16px 0}
+.mp-lbl{
+  font-family:'Syne',sans-serif;font-weight:700;
+  font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:8px;
+}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--accent);line-height:1;margin-bottom:3px}
+.stat-l{font-size:10px;color:var(--text3)}
+
+/* Setting rows */
+.set-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:13px 15px;margin-bottom:6px;
+}
+.set-lbl{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text)}
+.set-lbl svg{width:16px;height:16px;color:var(--text3);flex-shrink:0}
+
+/* Toggle pill */
+.t-pill{
+  width:46px;height:26px;border-radius:13px;
+  background:var(--bg4);border:1px solid var(--border2);
+  cursor:pointer;position:relative;padding:0;
+  transition:background .2s,border-color .2s;flex-shrink:0;
+}
+.t-pill::after{
+  content:'';position:absolute;
+  top:2px;left:2px;width:20px;height:20px;
+  border-radius:50%;background:var(--text3);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .2s;
+}
+.t-pill.on{background:rgba(91,184,138,.18);border-color:rgba(91,184,138,.4)}
+.t-pill.on::after{transform:translateX(20px);background:var(--accent)}
+
+/* Segment control */
+.seg{
+  display:flex;gap:2px;background:var(--bg4);
+  border-radius:8px;padding:2px;border:1px solid var(--border2);
+}
+.seg-btn{
+  padding:5px 10px;border-radius:6px;
+  font-size:11px;font-family:'Syne',sans-serif;font-weight:700;
+  color:var(--text3);transition:all .15s;
+}
+.seg-btn.on{background:var(--bg2);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* Buttons */
+.mp-btn{
+  width:100%;display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:13px 15px;
+  color:var(--text);font-size:13px;transition:all .15s;margin-bottom:6px;
+}
+.mp-btn:active{background:var(--bg3)}
+.mp-btn svg{width:15px;height:15px;color:var(--text3);flex-shrink:0}
+.mp-btn.danger{color:var(--del);border-color:rgba(210,60,60,.22)}
+.mp-btn.danger svg{color:var(--del)}
+.mp-btn.danger:active{background:rgba(210,60,60,.06)}
+
+/* Archive banner */
+.arc-row{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(91,184,138,.07);border:1px solid rgba(91,184,138,.2);
+  border-radius:12px;padding:13px 15px;margin-bottom:6px;
+}
+.arc-row-l{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--arc)}
+.arc-row-l svg{width:15px;height:15px;flex-shrink:0}
+.arc-row-r{font-size:11px;color:var(--text3)}
+
+/* Changelog */
+.cl-card{
+  margin:0 16px 8px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+}
+.cl-item{
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  display:flex;gap:10px;align-items:flex-start;
+}
+.cl-item:last-child{border-bottom:none}
+.ver{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:10px;
+  background:rgba(91,184,138,.1);border:1px solid rgba(91,184,138,.22);
+  color:var(--accent);border-radius:5px;padding:2px 7px;
+  white-space:nowrap;flex-shrink:0;margin-top:1px;
+}
+.cl-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:1px}
+.cl-dt{font-size:10px;color:var(--text3)}
+.dev-foot{text-align:center;padding:10px 0 16px;font-size:11px;color:var(--text3)}
+.dev-foot a{color:var(--text3);text-decoration:none}
+.dev-foot a:active{color:var(--accent)}
+
+/* ═══════════════════════════════════════
+   BOTTOM NAV  — in-flow (not fixed)
+═══════════════════════════════════════ */
+#bottom-nav{
+  flex-shrink:0;
+  background:var(--nav);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding:7px 4px;
+  padding-bottom:max(7px,env(safe-area-inset-bottom));
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 2px;border-radius:10px;
+  color:var(--text3);
+  font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.3px;
+  transition:color .15s;
+}
+.nav-btn:active{background:var(--bg3)}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:21px;height:21px}
+
+/* ═══════════════════════════════════════
+   MODALS
+═══════════════════════════════════════ */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.62);
+}
+.overlay.open{display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.overlay.center{justify-content:center;padding:20px}
+
+.sheet{
+  width:100%;max-width:480px;
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  max-height:72dvh;display:flex;flex-direction:column;
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+}
+.sheet-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:17px 17px 12px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sheet-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text)}
+.sheet-close{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--bg3);color:var(--text2);
+  font-size:18px;display:flex;align-items:center;justify-content:center;
+}
+.sheet-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sheet-body::-webkit-scrollbar{width:0}
+
+.arc-card{
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:11px 13px;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.arc-card-body{flex:1}
+.arc-card-ts{font-size:10px;color:var(--text3);margin-bottom:4px}
+.arc-card-txt{font-size:13px;color:var(--text2);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.arc-restore{
+  border:1px solid var(--border2);color:var(--text3);
+  border-radius:7px;padding:4px 10px;font-size:11px;flex-shrink:0;
+}
+.arc-restore:active{color:var(--arc);border-color:var(--arc)}
+
+/* iOS guide */
+.ios-sheet{
+  width:100%;max-width:480px;
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  padding:22px 22px max(22px,env(safe-area-inset-bottom));
+}
+.ios-ttl{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:16px}
+.ios-step{display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.6;align-items:flex-start}
+.ios-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ios-close{width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1px solid var(--border2);color:var(--text2);font-size:13px}
+
+/* Confirm dialog */
+.cfm-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:18px;padding:22px;width:100%;max-width:300px;text-align:center;
+}
+.cfm-ttl{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--text);margin-bottom:7px}
+.cfm-msg{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px}
+.cfm-btns{display:flex;gap:8px}
+.cfm-no{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);color:var(--text2);font-size:13px}
+.cfm-yes{flex:1;padding:11px;border-radius:10px;background:var(--del);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+
+/* Toast */
+#toast{
+  position:fixed;
+  top:calc(max(12px,env(safe-area-inset-top)) + 52px);
+  left:50%;transform:translateX(-50%) translateY(-10px);
+  background:var(--bg4);border:1px solid var(--border2);
+  color:var(--text);border-radius:20px;
+  padding:7px 16px;font-size:12px;
+  opacity:0;transition:opacity .2s,transform .2s;
+  pointer-events:none;white-space:nowrap;z-index:500;
+  box-shadow:var(--shadow);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <div id="header">
+    <div class="logo">Flash<em>Note</em></div>
+    <div class="hdr-btns">
+      <button class="ico-btn install" id="install-btn" style="display:none" onclick="triggerInstall()" title="アプリをインストール">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 19h14"/>
+        </svg>
+      </button>
+      <button class="ico-btn" id="search-btn" onclick="toggleSearch()">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SEARCH DRAWER ── -->
+  <div id="search-drawer">
+    <div class="search-row">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="メモを検索…"
+        oninput="onSearch(this.value)" autocomplete="off" spellcheck="false"/>
+      <button class="s-clear" onclick="clearSearch()">×</button>
+    </div>
+  </div>
+
+  <!-- ── PAGES ── -->
+  <div id="pages">
+
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+      <div id="feed"></div>
+      <div id="composer">
+        <textarea id="note-input" rows="1"
+          placeholder="いま何を考えてる？"
+          maxlength="500"
+          oninput="onInput(this)"
+          onkeydown="onKeyDown(event)"
+          autocomplete="off" spellcheck="false"
+          autofocus></textarea>
+        <div id="comp-meta">
+          <span class="char-hint" id="char-hint"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHIVE TAB -->
+    <div id="page-archive" class="page">
+      <div id="arc-feed"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="page-calendar" class="page">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-label"></div>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-area">
+        <div class="cal-dow" id="cal-dow"></div>
+        <div class="cal-cells" id="cal-cells"></div>
+      </div>
+      <div class="cal-divider"></div>
+      <div id="cal-day-label"></div>
+      <div id="cal-day-notes"></div>
+    </div>
+
+    <!-- MY PAGE -->
+    <div id="page-mypage" class="page">
+
+      <div class="mp-sec" style="padding-top:20px">
+        <div class="mp-lbl">統計</div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-n" id="st-total">0</div><div class="stat-l">メモ</div></div>
+          <div class="stat-box"><div class="stat-n" id="st-today">0</div><div class="stat-l">今日</div></div>
+          <div class="stat-box"><div class="stat-n" id="st-arc">0</div><div class="stat-l">アーカイブ</div></div>
+        </div>
+      </div>
+
+      <div class="mp-sec" style="margin-top:16px">
+        <div class="mp-lbl">アプリ設定</div>
+
+        <div class="set-row">
+          <div class="set-lbl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+            テーマ
+          </div>
+          <button class="t-pill" id="theme-pill" onclick="toggleTheme()">
+            <span class="pill-icon a" style="position:absolute;left:5px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none">🌙</span>
+            <span class="pill-icon b" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none">☀️</span>
+          </button>
+        </div>
+
+        <div class="set-row">
+          <div class="set-lbl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            カレンダー始まり
+          </div>
+          <div class="seg">
+            <button class="seg-btn" id="seg-sun" onclick="setCalStart('sun')">日曜</button>
+            <button class="seg-btn" id="seg-mon" onclick="setCalStart('mon')">月曜</button>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <div class="set-lbl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 10 4 15 9 20"/>
+              <path d="M20 4v7a4 4 0 01-4 4H4"/>
+            </svg>
+            Enterキーで送信
+          </div>
+          <button class="t-pill" id="enter-pill" onclick="toggleEnterSend()"></button>
+        </div>
+      </div>
+
+      <div class="mp-sec" style="margin-top:12px">
+        <div class="mp-lbl">アーカイブ</div>
+        <button class="arc-row" onclick="openArcModal()">
+          <div class="arc-row-l">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="5" rx="2"/>
+              <path d="M4 9v9a2 2 0 002 2h12a2 2 0 002-2V9M10 13h4"/>
+            </svg>
+            アーカイブを開く
+          </div>
+          <span class="arc-row-r" id="arc-cnt">0 件</span>
+        </button>
+      </div>
+
+      <div class="mp-sec" style="margin-top:12px">
+        <div class="mp-lbl">エクスポート</div>
+        <button class="mp-btn" onclick="exportJSON()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          JSON でエクスポート
+        </button>
+        <button class="mp-btn" onclick="exportTxt()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 10h16M4 14h10"/>
+          </svg>
+          テキストでエクスポート
+        </button>
+        <button class="mp-btn danger" onclick="openConfirm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          </svg>
+          すべてのメモを削除
+        </button>
+      </div>
+
+      <div style="margin-top:20px">
+        <div class="cl-card">
+          <div class="cl-item">
+            <div class="ver">v0.4</div>
+            <div>
+              <div class="cl-desc">アーカイブタブ・キーボード安定化・カレンダー月スワイプ・始まり曜日設定・Enter送信モード・グリーンテーマ刷新・送信ボタン廃止</div>
+              <div class="cl-dt">2025年</div>
+            </div>
+          </div>
+          <div class="cl-item">
+            <div class="ver">v0.3</div>
+            <div>
+              <div class="cl-desc">モバイルファースト・スワイプジェスチャー・カレンダー・PWAインストール</div>
+              <div class="cl-dt">2025年</div>
+            </div>
+          </div>
+          <div class="cl-item">
+            <div class="ver">v0.2</div>
+            <div>
+              <div class="cl-desc">テーマ切替・検索強化</div>
+              <div class="cl-dt">2025年</div>
+            </div>
+          </div>
+          <div class="cl-item">
+            <div class="ver">v0.1</div>
+            <div>
+              <div class="cl-desc">初回リリース</div>
+              <div class="cl-dt">2025年</div>
+            </div>
+          </div>
+        </div>
+        <div class="dev-foot">Developed by <a href="https://x.com/@modurili" target="_blank">@modurili</a></div>
+      </div>
+
+    </div><!-- /mypage -->
+  </div><!-- /pages -->
+
+  <!-- ── BOTTOM NAV (in-flow) ── -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      ホーム
+    </button>
+    <button class="nav-btn" id="nav-archive" onclick="showPage('archive')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="4" width="20" height="5" rx="2"/>
+        <path d="M4 9v9a2 2 0 002 2h12a2 2 0 002-2V9M10 13h4"/>
+      </svg>
+      アーカイブ
+    </button>
+    <button class="nav-btn" id="nav-calendar" onclick="showPage('calendar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      カレンダー
+    </button>
+    <button class="nav-btn" id="nav-mypage" onclick="showPage('mypage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      マイページ
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ── ARCHIVE MODAL ── -->
+<div class="overlay" id="arc-modal" onclick="e=>e.target===this&&closeArcModal()">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <div class="sheet-title">📦 アーカイブ</div>
+      <button class="sheet-close" onclick="closeArcModal()">×</button>
+    </div>
+    <div class="sheet-body" id="arc-modal-body"></div>
+  </div>
+</div>
+
+<!-- ── iOS INSTALL ── -->
+<div class="overlay" id="ios-modal" onclick="e=>e.target===this&&closeIOSModal()">
+  <div class="ios-sheet">
+    <div class="ios-ttl">📲 ホーム画面に追加</div>
+    <div class="ios-step"><div class="ios-num">1</div><div>Safari でこのページを開く</div></div>
+    <div class="ios-step"><div class="ios-num">2</div><div>画面下部の <strong>共有ボタン（□↑）</strong> をタップ</div></div>
+    <div class="ios-step"><div class="ios-num">3</div><div><strong>「ホーム画面に追加」</strong> → 追加 をタップ</div></div>
+    <button class="ios-close" onclick="closeIOSModal()">閉じる</button>
+  </div>
+</div>
+
+<!-- ── CONFIRM ── -->
+<div class="overlay center" id="confirm-overlay">
+  <div class="cfm-box">
+    <div class="cfm-ttl">すべて削除？</div>
+    <div class="cfm-msg">この操作は元に戻せません。</div>
+    <div class="cfm-btns">
+      <button class="cfm-no"  onclick="closeConfirm()">キャンセル</button>
+      <button class="cfm-yes" onclick="clearAll()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let notes = [];
+let cfg = { theme:'dark', calStart:'sun', enterSend:false };
+let page = 'home';
+let searchQ = '';
+let calY, calM, calSel = null;
+let deferred = null;
+
+// ══════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const SK = { n:'fn4_notes', c:'fn4_cfg' };
+const persist = () => {
+  try{ localStorage.setItem(SK.n, JSON.stringify(notes)); }catch(e){}
+};
+const persistCfg = () => {
+  try{ localStorage.setItem(SK.c, JSON.stringify(cfg)); }catch(e){}
+};
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+  try{ const d=localStorage.getItem(SK.n); if(d) notes=JSON.parse(d); }catch(e){}
+  try{ const c=localStorage.getItem(SK.c); if(c) cfg={...cfg,...JSON.parse(c)}; }catch(e){}
+
+  const now = new Date();
+  calY = now.getFullYear(); calM = now.getMonth(); calSel = now.getDate();
+
+  applyTheme(cfg.theme, false);
+  applySettings();
+  renderFeed();
+  renderArcFeed();
+  renderCal();
+  updateStats();
+
+  // PWA prompt (Android/Chrome)
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferred = e;
+    $('install-btn').style.display = 'flex';
+    $('install-btn').onclick = () => {
+      deferred.prompt();
+      deferred.userChoice.then(r => {
+        if (r.outcome === 'accepted') { showToast('🎉 インストールしました！'); $('install-btn').style.display = 'none'; }
+        deferred = null;
+      });
+    };
+  });
+
+  // iOS Safari install guide
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS && !navigator.standalone) {
+    $('install-btn').style.display = 'flex';
+    $('install-btn').onclick = showIOSModal;
+  }
+
+  // ── Keyboard stability (especially iOS) ──
+  // Composer is in-flow inside #page-home, so Android handles it natively.
+  // For iOS: we shrink #app height via --kb CSS var, pushing composer up.
+  if (window.visualViewport) {
+    let raf;
+    const updateKB = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const kb = Math.max(0,
+          window.innerHeight - window.visualViewport.offsetTop - window.visualViewport.height
+        );
+        // Only update if meaningfully changed (avoids micro-jitter)
+        const prev = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--kb')) || 0;
+        if (Math.abs(kb - prev) > 2) {
+          document.documentElement.style.setProperty('--kb', Math.round(kb) + 'px');
+        }
+      });
+    };
+    window.visualViewport.addEventListener('resize', updateKB, { passive: true });
+    window.visualViewport.addEventListener('scroll', updateKB, { passive: true });
+  }
+
+  // Calendar swipe gesture
+  setupCalSwipe();
+
+  setTimeout(() => { if (page === 'home') tryFocus(); }, 200);
+}
+
+const tryFocus = () => { const el=$('note-input'); if(el) el.focus(); };
+
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+function applyTheme(t, save=true) {
+  cfg.theme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  $('meta-theme').content = t === 'dark' ? '#0d1510' : '#f0f7f4';
+  $('theme-pill').classList.toggle('on', t === 'light');
+  if (save) persistCfg();
+}
+function toggleTheme() {
+  applyTheme(cfg.theme === 'dark' ? 'light' : 'dark');
+  showToast(cfg.theme === 'dark' ? '🌙 ダーク' : '☀️ ライト');
+}
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+function applySettings() {
+  $('seg-sun').classList.toggle('on', cfg.calStart === 'sun');
+  $('seg-mon').classList.toggle('on', cfg.calStart === 'mon');
+  $('enter-pill').classList.toggle('on', cfg.enterSend);
+}
+function setCalStart(v) {
+  cfg.calStart = v; persistCfg(); applySettings(); renderCal();
+}
+function toggleEnterSend() {
+  cfg.enterSend = !cfg.enterSend; persistCfg(); applySettings();
+  showToast(cfg.enterSend ? '↵ Enterで送信 ON' : '↵ Enterで送信 OFF');
+}
+
+// ══════════════════════════════════════════
+// COMPOSER
+// ══════════════════════════════════════════
+function onInput(el) {
+  const rem = 500 - el.value.length;
+  const h = $('char-hint');
+  h.textContent = el.value.length > 400 ? rem + ' 文字' : '';
+  h.className = 'char-hint' + (rem < 20 ? ' over' : rem < 50 ? ' warn' : '');
+  // Auto-resize without scrollbar
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+function onKeyDown(e) {
+  if (e.key !== 'Enter') return;
+  if (cfg.enterSend) {
+    if (!e.shiftKey) { e.preventDefault(); postNote(); }
+    // Shift+Enter → newline (default)
+  } else {
+    if (e.metaKey || e.ctrlKey) { e.preventDefault(); postNote(); }
+    // Plain Enter → newline (default)
+  }
+}
+
+function postNote() {
+  const el = $('note-input');
+  const text = el.value.trim();
+  if (!text) return;
+  notes.unshift({ id: Date.now().toString(), text, createdAt: new Date().toISOString(), archived: false });
+  persist();
+  el.value = ''; el.style.height = 'auto';
+  $('char-hint').textContent = '';
+  renderFeed(); renderCal(); updateStats();
+  showToast('✏️ 保存しました');
+  el.focus();
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const hl  = (txt,q) => {
+  const s = esc(txt);
+  if (!q) return s;
+  return s.replace(new RegExp(`(${esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<mark>$1</mark>');
+};
+const fmtDt = iso => {
+  const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  return { date:`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`, time:`${p(d.getHours())}:${p(d.getMinutes())}` };
+};
+
+// ══════════════════════════════════════════
+// FEED (HOME)
+// ══════════════════════════════════════════
+function renderFeed() {
+  const feed = $('feed');
+  const list = notes.filter(n => !n.archived && (!searchQ || n.text.toLowerCase().includes(searchQ.toLowerCase())));
+  updateStats();
+  if (!list.length) {
+    feed.innerHTML = `<div class="empty-state"><div class="ei">${searchQ?'🔍':'✏️'}</div><p>${searchQ?'一致するメモが見つかりませんでした':'まだメモがありません<br>思いついたことを書いてみよう'}</p></div>`;
+    return;
+  }
+  feed.innerHTML = list.map(n => {
+    const {date,time} = fmtDt(n.createdAt);
+    return `<div class="note-wrap" data-id="${n.id}">
+      <div class="swipe-bg right-bg-home"><div class="sb-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="5" rx="2"/><path d="M4 9v9a2 2 0 002 2h12a2 2 0 002-2V9M10 13h4"/></svg>保存</div></div>
+      <div class="swipe-bg left-bg"><div class="sb-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>削除</div></div>
+      <div class="note-card">
+        <div class="note-ts"><span class="note-date">${date}</span><span class="note-time">${time}</span></div>
+        <div class="note-body">${hl(n.text,searchQ)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  feed.querySelectorAll('.note-wrap').forEach(w => setupSwipe(w, 'home'));
+}
+
+// ══════════════════════════════════════════
+// ARCHIVE FEED (TAB)
+// ══════════════════════════════════════════
+function renderArcFeed() {
+  const feed = $('arc-feed');
+  const list = notes.filter(n => n.archived);
+  $('arc-cnt').textContent = list.length + ' 件';
+  if (!list.length) {
+    feed.innerHTML = `<div class="empty-state"><div class="ei">📦</div><p>アーカイブは空です<br>メモを右スワイプで保存</p></div>`;
+    return;
+  }
+  feed.innerHTML = list.map(n => {
+    const {date,time} = fmtDt(n.createdAt);
+    return `<div class="note-wrap" data-id="${n.id}">
+      <div class="swipe-bg right-bg-arc"><div class="sb-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>復元</div></div>
+      <div class="swipe-bg left-bg"><div class="sb-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>削除</div></div>
+      <div class="note-card arc">
+        <div class="note-ts"><span class="note-date">${date}</span><span class="note-time">${time}</span></div>
+        <div class="note-body">${esc(n.text)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  feed.querySelectorAll('.note-wrap').forEach(w => setupSwipe(w, 'archive'));
+}
+
+// ══════════════════════════════════════════
+// SWIPE GESTURE
+// ══════════════════════════════════════════
+function setupSwipe(wrap, ctx) {
+  const card = wrap.querySelector('.note-card');
+  const bgL  = wrap.querySelector('.swipe-bg.left-bg');
+  const bgR  = wrap.querySelector(ctx === 'home' ? '.swipe-bg.right-bg-home' : '.swipe-bg.right-bg-arc');
+  const id   = wrap.dataset.id;
+  const THR  = 78;
+  let sx=0, sy=0, dx=0, tracking=false, axis=null;
+
+  card.addEventListener('touchstart', e => {
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    tracking=true; axis=null; dx=0;
+    card.style.transition='none';
+    bgL.style.transition='none'; if(bgR) bgR.style.transition='none';
+  }, {passive:true});
+
+  card.addEventListener('touchmove', e => {
+    if (!tracking) return;
+    const cx=e.touches[0].clientX-sx, cy=e.touches[0].clientY-sy;
+    if (axis===null && (Math.abs(cx)>8||Math.abs(cy)>8))
+      axis = Math.abs(cx) > Math.abs(cy)*.9 ? 'h' : 'v';
+    if (axis !== 'h') return;
+    e.preventDefault();
+    dx = cx;
+    const c = Math.max(-130, Math.min(130, dx));
+    card.style.transform = `translateX(${c}px)`;
+    const r = Math.min(1, Math.abs(c)/THR);
+    if (c < 0) { bgL.style.opacity=r; if(bgR) bgR.style.opacity=0; }
+    else        { if(bgR) bgR.style.opacity=r; bgL.style.opacity=0; }
+  }, {passive:false});
+
+  card.addEventListener('touchend', () => {
+    if (!tracking||axis!=='h') { tracking=false; reset(); return; }
+    tracking=false;
+    const ease = 'transform .28s cubic-bezier(.34,1.56,.64,1), opacity .22s';
+    card.style.transition=ease; bgL.style.transition='opacity .18s'; if(bgR)bgR.style.transition='opacity .18s';
+
+    if (dx < -THR)       flyOut(wrap,card,'l', () => doDelete(id, ctx));
+    else if (dx > THR)   flyOut(wrap,card,'r', () => ctx==='home' ? doArchive(id) : doRestore(id));
+    else                 reset();
+
+    function reset(){
+      card.style.transform='translateX(0)';
+      bgL.style.opacity='0'; if(bgR)bgR.style.opacity='0';
+    }
+  });
+
+  function reset() {
+    card.style.transform='translateX(0)';
+    bgL.style.opacity='0'; if(bgR) bgR.style.opacity='0';
+  }
+}
+
+function flyOut(wrap, card, dir, cb) {
+  card.style.transform=`translateX(${dir==='l'?'-115%':'115%'}) scale(.93)`;
+  card.style.opacity='0';
+  const h = wrap.offsetHeight;
+  wrap.style.maxHeight = h + 'px';
+  setTimeout(() => {
+    wrap.style.transition='max-height .25s ease, margin-bottom .25s, opacity .25s';
+    wrap.style.maxHeight='0'; wrap.style.marginBottom='-8px'; wrap.style.opacity='0';
+    setTimeout(cb, 240);
+  }, 240);
+}
+
+function doDelete(id, ctx) {
+  notes = notes.filter(n => n.id !== id);
+  persist();
+  if (ctx==='home') renderFeed(); else renderArcFeed();
+  renderCal(); updateStats();
+  showToast('🗑 削除しました');
+}
+function doArchive(id) {
+  const n=notes.find(n=>n.id===id);
+  if(n){n.archived=true;persist();renderFeed();renderArcFeed();updateStats();}
+  showToast('📦 アーカイブしました');
+}
+function doRestore(id) {
+  const n=notes.find(n=>n.id===id);
+  if(n){n.archived=false;persist();renderFeed();renderArcFeed();updateStats();}
+  showToast('↩️ 復元しました');
+}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
+function toggleSearch() {
+  const d=$('search-drawer'), b=$('search-btn');
+  const open=!d.classList.contains('open');
+  d.classList.toggle('open',open); b.classList.toggle('on',open);
+  if(open) setTimeout(()=>$('search-input').focus(),80); else clearSearch();
+}
+function onSearch(q) { searchQ=q; renderFeed(); }
+function clearSearch() { searchQ=''; $('search-input').value=''; renderFeed(); }
+
+// ══════════════════════════════════════════
+// PAGE NAV
+// ══════════════════════════════════════════
+const PAGES = ['home','archive','calendar','mypage'];
+function showPage(p) {
+  page = p;
+  PAGES.forEach(id => {
+    $('page-'+id).classList.toggle('active', id===p);
+    $('nav-'+id).classList.toggle('active', id===p);
+  });
+  const isHome = p==='home';
+  $('search-btn').style.display   = isHome ? '' : 'none';
+  if (!isHome) {
+    $('search-drawer').classList.remove('open');
+    $('search-btn').classList.remove('on');
+  }
+  if (p==='archive')  renderArcFeed();
+  if (p==='calendar') renderCal();
+  if (p==='mypage')   updateStats();
+  if (isHome) setTimeout(tryFocus, 100);
+}
+
+// ══════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════
+const MNAMES=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function changeMonth(d) {
+  calM += d;
+  if (calM<0) { calM=11; calY--; }
+  if (calM>11){ calM=0;  calY++; }
+  calSel = null;
+  renderCal();
+}
+
+function selDate(d) {
+  calSel = d;
+  renderCal();
+  // ← NO scrollIntoView: notes list updates in place
+}
+
+function renderCal() {
+  $('cal-label').textContent = `${calY}年 ${MNAMES[calM]}`;
+  const startMon = cfg.calStart === 'mon';
+
+  // Day-of-week header
+  const dowLabels = startMon
+    ? [{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'},{l:'日',c:'dsun'}]
+    : [{l:'日',c:'dsun'},{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'}];
+  $('cal-dow').innerHTML = dowLabels.map(d=>`<span class="${d.c||''}">${d.l}</span>`).join('');
+
+  const today     = new Date();
+  const firstDOW  = new Date(calY, calM, 1).getDay(); // 0=Sun
+  const daysInM   = new Date(calY, calM+1, 0).getDate();
+  const offset    = startMon ? (firstDOW===0?6:firstDOW-1) : firstDOW;
+
+  const noteDays  = new Set(notes.filter(n=>!n.archived).map(n=>{
+    const d=new Date(n.createdAt);
+    return (d.getFullYear()===calY && d.getMonth()===calM) ? d.getDate() : null;
+  }).filter(Boolean));
+
+  let cells = '';
+  for (let i=0; i<offset; i++) cells += '<div></div>';
+  for (let d=1; d<=daysInM; d++) {
+    const actualDOW = new Date(calY,calM,d).getDay();
+    const isSun     = actualDOW===0, isSat=actualDOW===6;
+    const isToday   = d===today.getDate()&&calM===today.getMonth()&&calY===today.getFullYear();
+    const isSel     = d===calSel;
+    cells += `<div class="cal-cell${isToday?' today':''}${isSel?' sel':''}${isSun?' csun':''}${isSat?' csat':''}" onclick="selDate(${d})">
+      ${d}${noteDays.has(d)?'<span class="cal-dot"></span>':''}
+    </div>`;
+  }
+  $('cal-cells').innerHTML = cells;
+
+  const lbl   = $('cal-day-label');
+  const cNotes = $('cal-day-notes');
+  if (!calSel) { lbl.textContent=''; cNotes.innerHTML=''; return; }
+
+  const list = notes.filter(n => {
+    if (n.archived) return false;
+    const d=new Date(n.createdAt);
+    return d.getDate()===calSel && d.getMonth()===calM && d.getFullYear()===calY;
+  });
+  const WD=['日','月','火','水','木','金','土'];
+  const dObj = new Date(calY,calM,calSel);
+  lbl.textContent = `${calY}年${calM+1}月${calSel}日（${WD[dObj.getDay()]}） · ${list.length}件`;
+  if (!list.length) {
+    cNotes.innerHTML = `<div class="empty-state" style="padding:24px 20px;flex:none"><div class="ei">📅</div><p>この日のメモはありません</p></div>`;
+    return;
+  }
+  const p=n=>String(n).padStart(2,'0');
+  cNotes.innerHTML = list.map(n=>{
+    const d=new Date(n.createdAt);
+    return `<div class="cal-note-card">
+      <div class="cal-note-ts">${p(d.getHours())}:${p(d.getMinutes())}</div>
+      <div class="cal-note-txt">${esc(n.text)}</div>
+    </div>`;
+  }).join('');
+}
+
+// Calendar month swipe
+function setupCalSwipe() {
+  const el = $('page-calendar');
+  let sx=0, sy=0, moved=false;
+  el.addEventListener('touchstart', e=>{
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; moved=false;
+  }, {passive:true});
+  el.addEventListener('touchmove', e=>{
+    const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
+    if (Math.abs(dx)>Math.abs(dy)*1.3 && Math.abs(dx)>32) moved=true;
+  }, {passive:true});
+  el.addEventListener('touchend', e=>{
+    if (!moved) return;
+    const dx=e.changedTouches[0].clientX-sx;
+    if (Math.abs(dx)>55) changeMonth(dx<0?1:-1);
+  });
+}
+
+// ══════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════
+function updateStats() {
+  const active  = notes.filter(n=>!n.archived);
+  const arc     = notes.filter(n=>n.archived);
+  const today   = new Date();
+  const todayN  = active.filter(n=>{
+    const d=new Date(n.createdAt);
+    return d.toDateString()===today.toDateString();
+  });
+  $('st-total').textContent = active.length;
+  $('st-today').textContent = todayN.length;
+  $('st-arc').textContent   = arc.length;
+  $('arc-cnt').textContent  = arc.length + ' 件';
+}
+
+// ══════════════════════════════════════════
+// ARCHIVE MODAL (from MyPage)
+// ══════════════════════════════════════════
+function openArcModal() {
+  const list = notes.filter(n=>n.archived);
+  const body = $('arc-modal-body');
+  const p = n=>String(n).padStart(2,'0');
+  if (!list.length) {
+    body.innerHTML=`<div class="empty-state" style="padding:30px"><div class="ei">📦</div><p>アーカイブは空です</p></div>`;
+  } else {
+    body.innerHTML = list.map(n=>{
+      const d=new Date(n.createdAt);
+      return `<div class="arc-card">
+        <div class="arc-card-body">
+          <div class="arc-card-ts">${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}</div>
+          <div class="arc-card-txt">${esc(n.text)}</div>
+        </div>
+        <button class="arc-restore" onclick="restoreFromModal('${n.id}')">復元</button>
+      </div>`;
+    }).join('');
+  }
+  $('arc-modal').classList.add('open');
+}
+function closeArcModal()    { $('arc-modal').classList.remove('open'); }
+function restoreFromModal(id) { doRestore(id); openArcModal(); }
+$('arc-modal').addEventListener('click', e=>{ if(e.target===$('arc-modal')) closeArcModal(); });
+
+// ══════════════════════════════════════════
+// PWA / iOS
+// ══════════════════════════════════════════
+function showIOSModal()  { $('ios-modal').classList.add('open'); }
+function closeIOSModal() { $('ios-modal').classList.remove('open'); }
+$('ios-modal').addEventListener('click', e=>{ if(e.target===$('ios-modal')) closeIOSModal(); });
+
+// ══════════════════════════════════════════
+// EXPORT & CLEAR
+// ══════════════════════════════════════════
+function exportJSON() {
+  dlBlob(new Blob([JSON.stringify(notes.filter(n=>!n.archived),null,2)],{type:'application/json'}), `flashnote-${ds()}.json`);
+  showToast('📦 JSONを保存しました');
+}
+function exportTxt() {
+  const p=n=>String(n).padStart(2,'0');
+  const t=notes.filter(n=>!n.archived).map(n=>{
+    const d=new Date(n.createdAt);
+    return `[${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}]\n${n.text}`;
+  }).join('\n\n---\n\n');
+  dlBlob(new Blob([t],{type:'text/plain;charset=utf-8'}),`flashnote-${ds()}.txt`);
+  showToast('📄 テキストを保存しました');
+}
+function dlBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+function ds(){const d=new Date();return`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;}
+
+function openConfirm()  { $('confirm-overlay').classList.add('open'); }
+function closeConfirm() { $('confirm-overlay').classList.remove('open'); }
+function clearAll() {
+  notes=[]; persist(); closeConfirm();
+  renderFeed(); renderArcFeed(); renderCal(); updateStats();
+  showToast('🗑 すべて削除しました');
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(msg) {
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════════════════════════════════════
+// SERVICE WORKER
+// ══════════════════════════════════════════
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+init();
+</script>
+</body>
+</html>

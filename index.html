@@ -21,20 +21,20 @@
   --kb:0px;
 }
 [data-theme="dark"]{
-  --bg:#0d1510; --bg2:#131d17; --bg3:#1a2820; --bg4:#1e3027;
-  --border:#1c2e24; --border2:#2a4437;
-  --text:#c6e3d3; --text2:#5f9478; --text3:#304d3e;
-  --del:#f05252; --nav:#0d1510;
-  --shadow:0 4px 20px rgba(0,0,0,.45);
-  --hl:rgba(91,184,138,.15);
+  --bg:#121212; --bg2:#1a1a1a; --bg3:#202020; --bg4:#242424;
+  --border:#2a2a2a; --border2:#333333;
+  --text:#e5e5e5; --text2:#b3b3b3; --text3:#7a7a7a;
+  --del:#ff5c5c; --nav:#161616;
+  --shadow:0 4px 16px rgba(0,0,0,.6);
+  --hl:rgba(255,255,255,.08);
 }
 [data-theme="light"]{
-  --bg:#f0f7f4; --bg2:#ffffff; --bg3:#e4f2ec; --bg4:#d3e9de;
-  --border:#c8e0d8; --border2:#aecfc3;
-  --text:#1a3328; --text2:#3f7060; --text3:#8aada0;
-  --del:#d93c3c; --nav:#eef6f2;
-  --shadow:0 4px 16px rgba(26,51,40,.1);
-  --hl:rgba(91,184,138,.18);
+  --bg:#fdfdfd; --bg2:#ffffff; --bg3:#f5f5f5; --bg4:#f5f5f5;
+  --border:#e9e9e9; --border2:#e9e9e9;
+  --text:#2d2d2d; --text2:#646464; --text3:#a5a5a5;
+  --del:#d93c3c; --nav:#fafafa;
+  --shadow:0 4px 16px rgba(45,45,45,.1);
+  --hl:rgba(161,161,161,.18);
 }
 
 /* ───────────────────────────────────────
@@ -572,7 +572,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
     </svg>
-    <input type="text" id="si" placeholder="メモを検索…" oninput="onSearch(this.value)" autocomplete="off" spellcheck="false"/>
+    <input type="text" id="si" placeholder="メモを検索" oninput="onSearch(this.value)" autocomplete="off" spellcheck="false"/>
     <button class="sb-clear" onclick="clearSearch()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -588,7 +588,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   <div id="page-home" class="page active">
     <div class="feed" id="feed"></div>
     <div id="composer">
-      <textarea id="ni" rows="1" placeholder="いま何を考えてる？" maxlength="500"
+      <textarea id="ni" rows="1" placeholder="思いついたことはある？" maxlength="500"
         oninput="onInput(this)" onkeydown="onKD(event)" autocomplete="off" autofocus></textarea>
       <div id="comp-hint"></div>
     </div>
@@ -862,11 +862,11 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
       </button>
     </div>
     <div class="edit-body">
-      <textarea id="edit-ta" maxlength="500" placeholder="メモを入力…"></textarea>
+      <textarea id="edit-ta" maxlength="500" placeholder="メモを入力"></textarea>
     </div>
     <div class="edit-foot">
       <button class="edit-cancel" onclick="closeEdit()">キャンセル</button>
-      <button class="edit-save" onclick="saveEdit()">保存する</button>
+      <button class="edit-save" onclick="saveEdit()">保存</button>
     </div>
   </div>
 </div>
@@ -889,7 +889,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
     <div class="cfm-m">この操作は元に戻せません。アーカイブ・ゴミ箱のメモもすべて削除されます。</div>
     <div class="cfm-btns">
       <button class="cfm-no" onclick="closeCfm()">キャンセル</button>
-      <button class="cfm-yes" onclick="clearAll()">削除する</button>
+      <button class="cfm-yes" onclick="clearAll()">削除</button>
     </div>
   </div>
 </div>
@@ -1171,7 +1171,7 @@ function renderFeed() {
   const list = notes.filter(n => isActive(n) && (!q || n.text.toLowerCase().includes(q.toLowerCase())));
   updateStats();
   if (!list.length) {
-    el.innerHTML = `<div class="empty">${q ? IC.srchBig : IC.pencil}<p>${q ? '一致するメモが見つかりませんでした' : 'まだメモがありません\nいま何を考えてる？'}</p></div>`;
+    el.innerHTML = `<div class="empty">${q ? IC.srchBig : IC.pencil}<p>${q ? '一致するメモが見つかりませんでした' : 'まだメモがありません'}</p></div>`;
     return;
   }
   el.innerHTML = list.map(n => noteCardHTML(n,'home')).join('');
@@ -1183,7 +1183,7 @@ function renderArcFeed() {
   const q  = page==='archive' ? searchQ : '';
   const list = notes.filter(n => isArchived(n) && (!q || n.text.toLowerCase().includes(q.toLowerCase())));
   if (!list.length) {
-    el.innerHTML = `<div class="empty">${q ? IC.srchBig : IC.box}<p>${q ? '一致するメモが見つかりませんでした' : 'アーカイブは空です\nメモを右スワイプで保存できます'}</p></div>`;
+    el.innerHTML = `<div class="empty">${q ? IC.srchBig : IC.box}<p>${q ? '一致するメモが見つかりませんでした' : 'アーカイブは空です'}</p></div>`;
     return;
   }
   el.innerHTML = list.map(n => noteCardHTML(n,'archive')).join('');

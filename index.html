@@ -93,6 +93,8 @@ a{color:inherit;text-decoration:none}
   border-color:rgba(91,184,138,.35);
   color:var(--accent);background:rgba(91,184,138,.06);
 }
+/* Smooth fade for search btn */
+#search-btn{transition:opacity .22s}
 
 /* ───────────────────────────────────────
    SEARCH DRAWER
@@ -168,7 +170,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   animation:popUp .2s cubic-bezier(.34,1.56,.64,1);
   user-select:none;
 }
-.nc.arc-card{border-left:2px solid rgba(91,184,138,.3)}
+.nc.arc-card{border-left:3px solid color-mix(in srgb,var(--accent) 50%,transparent)}
 .nc.trash-card{opacity:.85}
 @keyframes popUp{
   from{opacity:0;transform:scale(.95) translateY(5px)}
@@ -178,6 +180,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
 .nc-ts{display:flex;align-items:baseline;gap:5px}
 .nc-date{font-size:11px;color:var(--text3)}
 .nc-time{font-size:12px;color:var(--text2);font-weight:500}
+.nc-rel{font-size:12px;color:var(--text2)}
 .nc-acts{display:flex;gap:0;flex-shrink:0}
 .na{
   width:30px;height:28px;border-radius:7px;
@@ -251,18 +254,28 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   padding:16px 18px 10px;position:relative;
 }
 #cal-label{
-  font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);
+  font-weight:700;font-size:18px;color:var(--text);
   text-align:center;
 }
-.cal-wrap{padding:0 12px;overflow:hidden}
-.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px}
+.cal-wrap{padding:0;overflow:hidden;position:relative}
+.cal-dow{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  margin-bottom:3px;padding:0 12px;
+}
 .cal-dow span{
   text-align:center;font-size:11px;color:var(--text3);
-  font-family:'Syne',sans-serif;font-weight:700;padding:3px 0;
+  font-weight:700;padding:3px 0;
 }
 .cal-dow .dsun{color:#e05555}
 .cal-dow .dsat{color:#5575d4}
-#cal-cells{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+/* 3-panel drag slider */
+#cal-slider{overflow:hidden;position:relative}
+#cal-track{display:flex;will-change:transform;transition:none}
+.cal-panel{flex:0 0 100%;min-width:0}
+.cal-cells-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:2px;padding:0 12px;
+}
 .cc{
   aspect-ratio:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
@@ -273,7 +286,12 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
 .cc.csun{color:#e05555}
 .cc.csat{color:#5575d4}
 .cc:active{background:var(--bg3)}
-.cc.today{background:rgba(91,184,138,.1);color:var(--accent);font-weight:700}
+/* today: subtle/weak */
+.cc.today{
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  color:var(--accent);font-weight:600;
+}
+/* sel: solid accent */
 .cc.sel{background:var(--accent);color:#fff;font-weight:700}
 .cc.sel.csun,.cc.sel.csat{color:#fff}
 .cdot{width:4px;height:4px;border-radius:50%;background:var(--accent)}
@@ -311,7 +329,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
 }
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
 .stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
-.stat-n{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--text);line-height:1;margin-bottom:3px}
+.stat-n{font-weight:700;font-size:22px;color:var(--text);line-height:1;margin-bottom:3px}
 .stat-l{font-size:10px;color:var(--text3)}
 /* Setting row */
 .sr{
@@ -336,7 +354,10 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .2s;
 }
 .tp.on::after{transform:translateX(19px);background:var(--accent)}
-.tp.on{background:rgba(91,184,138,.12);border-color:rgba(91,184,138,.35)}
+.tp.on{
+  background:color-mix(in srgb,var(--accent) 18%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 45%,transparent);
+}
 /* Segment */
 .seg{display:flex;gap:2px;background:var(--bg4);border-radius:8px;padding:2px;border:1px solid var(--border2)}
 .sg{
@@ -392,8 +413,8 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
    FULLPAGE OVERLAY (trash, version history)
 ─────────────────────────────────────── */
 .fp{
-  position:fixed;inset:0;
-  max-width:480px;left:50%;
+  position:fixed;top:0;bottom:0;
+  left:50%;width:100%;max-width:480px;
   transform:translateX(-50%) translateY(102%);
   transition:transform .32s cubic-bezier(.32,.01,.15,1);
   background:var(--bg);z-index:200;
@@ -460,7 +481,7 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   border-radius:14px;color:var(--text);
   font-family:inherit;font-size:15px;line-height:1.6;
   padding:12px 14px;outline:none;resize:none;
-  min-height:120px;max-height:280px;
+  min-height:220px;max-height:400px;
   transition:border-color .15s;
 }
 #edit-ta:focus{border-color:var(--accent)}
@@ -506,10 +527,10 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
 /* ───────────────────────────────────────
    VERSION HISTORY
 ─────────────────────────────────────── */
-.vl-body{padding:12px 14px 20px}
+.vl-body{padding:12px 0 20px}
 .vl-item{
   background:var(--bg2);border:1px solid var(--border);
-  border-radius:12px;margin-bottom:8px;overflow:hidden;
+  border-radius:12px;margin:0 0 8px;overflow:hidden;
 }
 .vl-head{
   display:flex;align-items:center;gap:10px;padding:13px 15px;
@@ -606,7 +627,13 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
     </div>
     <div class="cal-wrap">
       <div class="cal-dow" id="cal-dow"></div>
-      <div id="cal-cells"></div>
+      <div id="cal-slider">
+        <div id="cal-track">
+          <div class="cal-panel" id="cal-panel-prev"></div>
+          <div class="cal-panel" id="cal-panel-curr"></div>
+          <div class="cal-panel" id="cal-panel-next"></div>
+        </div>
+      </div>
     </div>
     <div class="cal-div"></div>
     <div id="cal-day-lbl"></div>
@@ -665,8 +692,20 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
       <div class="sr">
         <div class="srl">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          </svg>時間の表示
+        </div>
+        <div class="seg">
+          <button class="sg" id="sg-abs" onclick="setTimeMode('absolute')">絶対</button>
+          <button class="sg" id="sg-rel" onclick="setTimeMode('relative')">相対</button>
+        </div>
+      </div>
+
+      <div class="sr">
+        <div class="srl">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
-            <path d="M12 8v4l3 3"/>
+            <path d="M12 8h.01M12 11v5"/>
           </svg>
           アクセントカラー
         </div>
@@ -711,13 +750,20 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
 
     <div class="mp-s" style="margin-top:14px;padding-bottom:4px">
       <div class="mpl">アプリ情報</div>
+      <button class="mb" onclick="shareApp()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        友達に共有する
+      </button>
       <button class="mb" onclick="openVer()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8h.01M12 11v5"/>
+          <circle cx="12" cy="12" r="10"/><path d="M12 8h.01M12 11v5"/>
         </svg>
         バージョン履歴
-        <span style="margin-left:auto;font-size:11px;color:var(--text3)">v0.5</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">v0.6</span>
       </button>
     </div>
 
@@ -753,10 +799,9 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
   </button>
   <button class="nb" id="nb-mypage" onclick="showPage('mypage')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
-    </svg>
-    マイページ
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>マイページ
   </button>
 </nav>
 
@@ -787,8 +832,26 @@ mark{background:var(--hl);color:var(--accent);border-radius:2px;padding:0 1px}
     <div class="fp-title">バージョン履歴</div>
     <div style="width:36px"></div>
   </div>
-  <div style="flex:1;overflow-y:auto;overflow-x:hidden" id="ver-body">
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px" id="ver-body">
     <div class="vl-body">
+      <div class="vl-item">
+        <div class="vl-head"><span class="vtag">v0.6</span><span class="vtitle">UI全面改善</span><span class="vdate">2025年</span></div>
+        <div class="vl-body-txt"><ul>
+          <li>カレンダーを指の動きに追従するドラッグ切替に</li>
+          <li>絶対/相対時間の表示切替</li>
+          <li>テーマトグルの背景をアクセントカラーに連動</li>
+          <li>アーカイブカードの左端をアクセントカラーに</li>
+          <li>今日の日付を弱いハイライト、選択日を強調に</li>
+          <li>検索アイコンをマイページ遷移時に滑らかに非表示</li>
+          <li>マイページ遷移時に検索バーを自動クローズ</li>
+          <li>友達に共有ボタンを追加</li>
+          <li>編集欄を拡大、ゴミ箱/バージョン履歴の横幅修正</li>
+          <li>ホーム遷移時のキーボード自動表示を廃止</li>
+          <li>PWA起動時のみキーボードを自動表示</li>
+          <li>統計・カレンダーフォントをNoto Sans JPに統一</li>
+          <li>スワイプアニメーションを高速化</li>
+        </ul></div>
+      </div>
       <div class="vl-item">
         <div class="vl-head"><span class="vtag">v0.5</span><span class="vtitle">大型アップデート</span><span class="vdate">2025年</span></div>
         <div class="vl-body-txt"><ul>
@@ -930,10 +993,10 @@ const ACCENTS = {
 // STATE
 // ════════════════════════════════════════
 let notes = [];
-let cfg = { theme:'dark', calStart:'sun', accent:'green' };
+let cfg = { theme:'dark', calStart:'sun', accent:'green', timeMode:'absolute' };
 let page = 'home';
 let searchQ = '';
-let calY, calM, calSel = null, calAnimDir = 0;
+let calY, calM, calSel = null;
 let editingId = null;
 let deferred = null;
 
@@ -1004,15 +1067,16 @@ function init() {
     window.visualViewport.addEventListener('scroll', onVV, {passive:true});
   }
 
-  // Calendar swipe
-  setupCalSwipe();
+  setupCalDrag();
 
-  // Close modals on overlay click
   $('edit-modal').addEventListener('click', e => { if(e.target===$('edit-modal')) closeEdit(); });
   $('ios-modal').addEventListener('click',  e => { if(e.target===$('ios-modal'))  closeIOS(); });
   $('cfm-modal').addEventListener('click',  e => { if(e.target===$('cfm-modal'))  closeCfm(); });
 
-  setTimeout(() => { if(page==='home') tryFocus(); }, 200);
+  // Focus textarea only on PWA launch, not on every home navigation
+  const isPWA = window.navigator.standalone ||
+    window.matchMedia('(display-mode:standalone)').matches;
+  if (isPWA) setTimeout(tryFocus, 350);
 }
 
 const tryFocus = () => { const e=$('ni'); if(e) e.focus(); };
@@ -1060,9 +1124,13 @@ function renderAccentPicker() {
 function applySettings() {
   $('sg-sun').classList.toggle('on', cfg.calStart==='sun');
   $('sg-mon').classList.toggle('on', cfg.calStart==='mon');
+  $('sg-abs') && $('sg-abs').classList.toggle('on', cfg.timeMode==='absolute');
+  $('sg-rel') && $('sg-rel').classList.toggle('on', cfg.timeMode==='relative');
 }
-function setCalStart(v) {
-  cfg.calStart=v; saveCfg(); applySettings(); renderCal();
+function setCalStart(v) { cfg.calStart=v; saveCfg(); applySettings(); renderCal(); }
+function setTimeMode(v) {
+  cfg.timeMode=v; saveCfg(); applySettings();
+  renderFeed(); renderArcFeed();
 }
 
 // ════════════════════════════════════════
@@ -1113,6 +1181,18 @@ const fmtDt = iso => {
   const d=new Date(iso), p=n=>String(n).padStart(2,'0');
   return { date:`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`, time:`${p(d.getHours())}:${p(d.getMinutes())}` };
 };
+function fmtTs(iso) {
+  if (cfg.timeMode === 'relative') {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins=Math.floor(diff/60000), hrs=Math.floor(diff/3600000), days=Math.floor(diff/86400000);
+    if (mins < 1)   return { rel:'たった今' };
+    if (mins < 60)  return { rel:`${mins}分前` };
+    if (hrs  < 24)  return { rel:`${hrs}時間前` };
+    if (days === 1) return { rel:'昨日' };
+    if (days < 7)   return { rel:`${days}日前` };
+  }
+  return fmtDt(iso);
+}
 const isActive   = n => !n.archived && !n.deletedAt;
 const isArchived = n => n.archived  && !n.deletedAt;
 const isTrashed  = n => !!n.deletedAt;
@@ -1121,8 +1201,10 @@ const isTrashed  = n => !!n.deletedAt;
 // RENDER FEEDS
 // ════════════════════════════════════════
 function noteCardHTML(n, ctx) {
-  const {date,time} = fmtDt(n.createdAt);
-  const bodyHtml = (ctx==='home'||ctx==='archive') ? hl(n.text, searchQ) : esc(n.text);
+  const ts = fmtTs(n.createdAt);
+  const tsHtml = ts.rel
+    ? `<span class="nc-rel">${ts.rel}</span>`
+    : `<span class="nc-date">${ts.date}</span><span class="nc-time">${ts.time}</span>`;
 
   // Swipe backgrounds per context
   let sbgL, sbgR;
@@ -1145,18 +1227,17 @@ function noteCardHTML(n, ctx) {
 
   const cardClass = ctx==='archive' ? ' arc-card' : ctx==='trash' ? ' trash-card' : '';
 
+  const bodyHtml = (ctx==='home'||ctx==='archive') ? hl(n.text, searchQ) : esc(n.text);
+
   return `<div class="nw" data-id="${n.id}" data-ctx="${ctx}">
     ${sbgR}${sbgL}
     <div class="nc${cardClass}">
       <div class="nc-top">
-        <div class="nc-ts">
-          <span class="nc-date">${date}</span>
-          <span class="nc-time">${time}</span>
-        </div>
+        <div class="nc-ts">${tsHtml}</div>
         <div class="nc-acts">
-          <button class="na" onclick="copyNote('${n.id}')" title="コピー">${IC.copy}</button>
-          ${ctx!=='trash' ? `<button class="na" onclick="openEdit('${n.id}')" title="編集">${IC.edit}</button>` : ''}
-          <button class="na" onclick="trashNote('${n.id}')" title="削除" style="${ctx==='trash'?'display:none':''}">${IC.trash}</button>
+          <button class="na" onclick="copyNote('${n.id}')">${IC.copy}</button>
+          ${ctx!=='trash'?`<button class="na" onclick="openEdit('${n.id}')">${IC.edit}</button>`:''}
+          ${ctx!=='trash'?`<button class="na" onclick="trashNote('${n.id}')">${IC.trash}</button>`:''}
         </div>
       </div>
       <div class="nc-body">${bodyHtml}</div>
@@ -1238,17 +1319,17 @@ function setupSwipe(wrap, ctx) {
     });
   }, {passive:false});
 
-  const ease='transform .28s cubic-bezier(.34,1.56,.64,1), opacity .22s';
   card.addEventListener('touchend', () => {
     if (!track||axis!=='h') { track=false; resetCard(); return; }
     track=false;
-    card.style.transition=ease;
-    bgs.forEach(b=>b.style.transition='opacity .18s');
+    card.style.transition='transform .16s ease-in, opacity .14s';
+    bgs.forEach(b=>b.style.transition='opacity .14s');
     if      (dx < -THR) flyOut(wrap,card,'l', () => onSwipeLeft(id,ctx));
     else if (dx >  THR) flyOut(wrap,card,'r', () => onSwipeRight(id,ctx));
     else resetCard();
 
     function resetCard() {
+      card.style.transition='transform .2s cubic-bezier(.34,1.56,.64,1)';
       card.style.transform='translateX(0)';
       bgs.forEach(b=>b.style.opacity='0');
     }
@@ -1256,15 +1337,15 @@ function setupSwipe(wrap, ctx) {
 }
 
 function flyOut(wrap, card, dir, cb) {
-  card.style.transform=`translateX(${dir==='l'?'-112%':'112%'}) scale(.92)`;
+  card.style.transform=`translateX(${dir==='l'?'-105%':'105%'})`;
   card.style.opacity='0';
   const h=wrap.offsetHeight;
   wrap.style.maxHeight=h+'px';
   setTimeout(()=>{
-    wrap.style.transition='max-height .24s ease, margin-bottom .24s, opacity .24s';
+    wrap.style.transition='max-height .14s ease,margin-bottom .14s,opacity .14s';
     wrap.style.maxHeight='0'; wrap.style.marginBottom='-8px'; wrap.style.opacity='0';
-    setTimeout(cb, 230);
-  },230);
+    setTimeout(cb, 150);
+  }, 160);
 }
 
 function onSwipeLeft(id, ctx) {
@@ -1360,9 +1441,6 @@ function clearSearch() {
   renderFeed(); renderArcFeed(); renderCal();
 }
 
-// ════════════════════════════════════════
-// PAGE NAV
-// ════════════════════════════════════════
 const PAGES = ['home','archive','calendar','mypage'];
 function showPage(p) {
   page=p;
@@ -1370,111 +1448,137 @@ function showPage(p) {
     $('page-'+id).classList.toggle('active',id===p);
     $('nb-'+id).classList.toggle('on',id===p);
   });
-  // Search button: show on home/archive/calendar, hidden (but layout preserved) on mypage
   const sbtn=$('search-btn');
-  sbtn.style.visibility = p==='mypage' ? 'hidden' : 'visible';
-
-  // Close search on page switch if incompatible context
-  if(p==='mypage' || p==='home' && searchQ) {
-    // Keep search open if applicable
+  if (p==='mypage') {
+    sbtn.style.opacity='0';
+    sbtn.style.pointerEvents='none';
+    $('search-bar').classList.remove('open');
+    sbtn.classList.remove('on');
+    clearSearch();
+    updateStats(); renderAccentPicker();
+  } else {
+    sbtn.style.opacity='';
+    sbtn.style.pointerEvents='';
   }
-
   if(p==='archive')  renderArcFeed();
   if(p==='calendar') renderCal();
-  if(p==='mypage')   { updateStats(); renderAccentPicker(); }
-  if(p==='home')     setTimeout(tryFocus,100);
+  // No tryFocus on home nav — only on PWA launch
 }
 
 // ════════════════════════════════════════
-// CALENDAR
+// CALENDAR — 3-panel drag slider
 // ════════════════════════════════════════
 const MNAMES=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+let _calDragActive=false, _calDragHoriz=null, _calDragSX=0, _calDragSY=0, _calSliderW=0;
 
-function changeMonth(delta) {
-  calAnimDir=delta; // 1=next(slide from right), -1=prev(slide from left)
-  calM+=delta;
-  if(calM<0){calM=11;calY--;}
-  if(calM>11){calM=0;calY++;}
-  calSel=null; renderCal();
-}
+function prevM(y,m){ return m===0?{y:y-1,m:11}:{y,m:m-1}; }
+function nextM(y,m){ return m===11?{y:y+1,m:0}:{y,m:m+1}; }
 
-function selDay(d) {
-  calSel=(calSel===d?null:d);
-  renderCalDayNotes();
-}
-
-function renderCal() {
-  const lbl=$('cal-label');
-  lbl.textContent=`${calY}年 ${MNAMES[calM]}`;
-
-  // Animate label
-  if(calAnimDir!==0) {
-    lbl.classList.remove('anim-r','anim-l');
-    void lbl.offsetWidth;
-    lbl.classList.add(calAnimDir>0?'anim-r':'anim-l');
-  }
-
-  const startMon = cfg.calStart==='mon';
-  const dowRows = startMon
-    ? [{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'},{l:'日',c:'dsun'}]
-    : [{l:'日',c:'dsun'},{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'}];
-  $('cal-dow').innerHTML=dowRows.map(d=>`<span class="${d.c||''}">${d.l}</span>`).join('');
-
-  const today   = new Date();
-  const first   = new Date(calY,calM,1).getDay(); // 0=Sun
-  const inMonth = new Date(calY,calM+1,0).getDate();
-  const offset  = startMon ? (first===0?6:first-1) : first;
-
-  const noteDays=new Set(notes.filter(n=>isActive(n)).map(n=>{
+function renderCalPanel(el, year, month) {
+  const startMon=cfg.calStart==='mon';
+  const today=new Date();
+  const first=new Date(year,month,1).getDay();
+  const inMonth=new Date(year,month+1,0).getDate();
+  const offset=startMon?(first===0?6:first-1):first;
+  const noteDays=new Set(notes.filter(isActive).map(n=>{
     const d=new Date(n.createdAt);
-    return (d.getFullYear()===calY&&d.getMonth()===calM)?d.getDate():null;
+    return (d.getFullYear()===year&&d.getMonth()===month)?d.getDate():null;
   }).filter(Boolean));
-
-  // Search filter in calendar: highlight matching days
-  const searchDays = searchQ ? new Set(notes.filter(n=>isActive(n)&&n.text.toLowerCase().includes(searchQ.toLowerCase())).map(n=>{
-    const d=new Date(n.createdAt);
-    return (d.getFullYear()===calY&&d.getMonth()===calM)?d.getDate():null;
-  }).filter(Boolean)) : null;
-
   let cells='';
   for(let i=0;i<offset;i++) cells+='<div></div>';
   for(let d=1;d<=inMonth;d++){
-    const dow=new Date(calY,calM,d).getDay();
-    const isSun=dow===0, isSat=dow===6;
-    const isToday=d===today.getDate()&&calM===today.getMonth()&&calY===today.getFullYear();
-    const isSel=d===calSel;
-    const hasDot=searchDays ? searchDays.has(d) : noteDays.has(d);
-    cells+=`<div class="cc${isToday?' today':''}${isSel?' sel':''}${isSun?' csun':''}${isSat?' csat':''}" onclick="selDay(${d})">${d}${hasDot?'<span class="cdot"></span>':''}</div>`;
+    const dow=new Date(year,month,d).getDay();
+    const isSun=dow===0,isSat=dow===6;
+    const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+    const isSel=(year===calY&&month===calM&&d===calSel);
+    const hasDot=noteDays.has(d);
+    cells+=`<div class="cc${isToday?' today':''}${isSel?' sel':''}${isSun?' csun':''}${isSat?' csat':''}" data-d="${d}" data-y="${year}" data-m="${month}">${d}${hasDot?'<span class="cdot"></span>':''}</div>`;
   }
+  el.innerHTML=`<div class="cal-cells-grid">${cells}</div>`;
+}
 
-  const cellsEl=$('cal-cells');
-  cellsEl.innerHTML=cells;
-  if(calAnimDir!==0){
-    cellsEl.classList.remove('anim-r','anim-l');
-    void cellsEl.offsetWidth;
-    cellsEl.classList.add(calAnimDir>0?'anim-r':'anim-l');
-    calAnimDir=0;
-  }
-
+function renderCal() {
+  $('cal-label').textContent=`${calY}年 ${MNAMES[calM]}`;
+  const startMon=cfg.calStart==='mon';
+  const dowRows=startMon
+    ?[{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'},{l:'日',c:'dsun'}]
+    :[{l:'日',c:'dsun'},{l:'月'},{l:'火'},{l:'水'},{l:'木'},{l:'金'},{l:'土',c:'dsat'}];
+  $('cal-dow').innerHTML=dowRows.map(d=>`<span class="${d.c||''}">${d.l}</span>`).join('');
+  const prev=prevM(calY,calM), next=nextM(calY,calM);
+  renderCalPanel($('cal-panel-prev'),prev.y,prev.m);
+  renderCalPanel($('cal-panel-curr'),calY,calM);
+  renderCalPanel($('cal-panel-next'),next.y,next.m);
+  const track=$('cal-track');
+  track.style.transition='none';
+  const W=$('cal-slider').offsetWidth||300;
+  track.style.transform=`translateX(${-W}px)`;
   renderCalDayNotes();
+}
+
+function commitCalMonth(dir) {
+  if(dir>0){ const n=nextM(calY,calM); calY=n.y; calM=n.m; }
+  else      { const p=prevM(calY,calM); calY=p.y; calM=p.m; }
+  calSel=null; renderCal();
+}
+
+function setupCalDrag() {
+  const slider=$('cal-slider'), track=$('cal-track');
+  track.addEventListener('click', e=>{
+    const cell=e.target.closest('.cc'); if(!cell) return;
+    const d=parseInt(cell.dataset.d), y=parseInt(cell.dataset.y), m=parseInt(cell.dataset.m);
+    if(y!==calY||m!==calM){ calY=y; calM=m; calSel=d; renderCal(); return; }
+    calSel=(calSel===d?null:d); renderCal();
+  });
+  slider.addEventListener('touchstart',e=>{
+    _calDragActive=true; _calDragHoriz=null;
+    _calDragSX=e.touches[0].clientX; _calDragSY=e.touches[0].clientY;
+    _calSliderW=slider.offsetWidth||300;
+    track.style.transition='none';
+  },{passive:true});
+  slider.addEventListener('touchmove',e=>{
+    if(!_calDragActive) return;
+    const dx=e.touches[0].clientX-_calDragSX, dy=e.touches[0].clientY-_calDragSY;
+    if(_calDragHoriz===null&&(Math.abs(dx)>6||Math.abs(dy)>6))
+      _calDragHoriz=Math.abs(dx)>Math.abs(dy)*.9;
+    if(!_calDragHoriz) return;
+    e.preventDefault();
+    const W=_calSliderW;
+    const raw=-W+dx;
+    const clamped=Math.max(-W*2+W*.15,Math.min(-W*.15,raw));
+    track.style.transform=`translateX(${clamped}px)`;
+  },{passive:false});
+  slider.addEventListener('touchend',e=>{
+    if(!_calDragActive||!_calDragHoriz){ _calDragActive=false; snapBack(); return; }
+    _calDragActive=false;
+    const dx=e.changedTouches[0].clientX-_calDragSX, W=_calSliderW;
+    if(Math.abs(dx)>Math.min(W*.3,80)){
+      const dir=dx<0?1:-1;
+      track.style.transition='transform .28s cubic-bezier(.25,.8,.25,1)';
+      track.style.transform=`translateX(${dir>0?-W*2:0}px)`;
+      setTimeout(()=>commitCalMonth(dir),300);
+    } else { snapBack(); }
+  });
+  function snapBack(){
+    const W=$('cal-slider').offsetWidth||300;
+    track.style.transition='transform .26s cubic-bezier(.25,.8,.25,1)';
+    track.style.transform=`translateX(${-W}px)`;
+    setTimeout(()=>{ track.style.transition='none'; },280);
+  }
 }
 
 function renderCalDayNotes() {
   const lbl=$('cal-day-lbl'), notesEl=$('cal-day-notes');
-  if(!calSel){lbl.textContent='';notesEl.innerHTML='';return;}
-
+  if(!calSel){ lbl.textContent=''; notesEl.innerHTML=''; return; }
   const q=searchQ;
   const list=notes.filter(n=>{
-    if(!isActive(n))return false;
+    if(!isActive(n)) return false;
     const d=new Date(n.createdAt);
-    if(d.getDate()!==calSel||d.getMonth()!==calM||d.getFullYear()!==calY)return false;
-    return !q||n.text.toLowerCase().includes(q.toLowerCase());
+    return d.getDate()===calSel&&d.getMonth()===calM&&d.getFullYear()===calY
+      &&(!q||n.text.toLowerCase().includes(q.toLowerCase()));
   });
-
   const WD=['日','月','火','水','木','金','土'];
   const dObj=new Date(calY,calM,calSel);
   lbl.textContent=`${calY}年${calM+1}月${calSel}日（${WD[dObj.getDay()]}） · ${list.length}件`;
-
   if(!list.length){
     notesEl.innerHTML=`<div class="empty" style="padding:24px 20px;flex:none">${IC.calBig}<p>この日のメモはありません</p></div>`;
     return;
@@ -1482,26 +1586,8 @@ function renderCalDayNotes() {
   const p=n=>String(n).padStart(2,'0');
   notesEl.innerHTML=list.map(n=>{
     const d=new Date(n.createdAt);
-    return `<div class="cn">
-      <div class="cn-ts">${p(d.getHours())}:${p(d.getMinutes())}</div>
-      <div class="cn-body">${hl(n.text,searchQ)}</div>
-    </div>`;
+    return `<div class="cn"><div class="cn-ts">${p(d.getHours())}:${p(d.getMinutes())}</div><div class="cn-body">${hl(n.text,searchQ)}</div></div>`;
   }).join('');
-}
-
-function setupCalSwipe() {
-  const el=$('page-calendar');
-  let sx=0, sy=0, moved=false;
-  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false;},{passive:true});
-  el.addEventListener('touchmove',e=>{
-    const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
-    if(Math.abs(dx)>Math.abs(dy)*1.4&&Math.abs(dx)>36) moved=true;
-  },{passive:true});
-  el.addEventListener('touchend',e=>{
-    if(!moved)return;
-    const dx=e.changedTouches[0].clientX-sx;
-    if(Math.abs(dx)>55) changeMonth(dx<0?1:-1);
-  });
 }
 
 // ════════════════════════════════════════
@@ -1531,6 +1617,20 @@ function closeIOS()   { $('ios-modal').classList.remove('open'); }
 function closeEdit()  { $('edit-modal').classList.remove('open'); _eid=null; }
 function openCfm()    { $('cfm-modal').classList.add('open'); }
 function closeCfm()   { $('cfm-modal').classList.remove('open'); }
+
+// ════════════════════════════════════════
+// SHARE
+// ════════════════════════════════════════
+function shareApp() {
+  const url='https://modurili.github.io/FlashNote/';
+  if (navigator.share) {
+    navigator.share({ title:'FlashNote', text:'思いついたことをさっと書き留めるメモアプリ', url }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(()=>showToast('URLをコピーしました'))
+      .catch(()=>showToast('コピーできませんでした'));
+  }
+}
 
 // ════════════════════════════════════════
 // EXPORT / CLEAR
